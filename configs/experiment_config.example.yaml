@@ -1,0 +1,18 @@
+# Paths template for reproduction scripts.
+# The original runs used hard-coded server paths; replace the values
+# below with your local layout. No data ships with this repository.
+data_root: "/path/to/openset_st_cf/data"
+outputs_root: "/path/to/openset_st_cf/outputs"
+# preprocessed npz (X_shared 108 / X_specific 892 / y_fine / y_coarse /
+# folds / core_arr), see src/data.py for the expected format
+preprocessed_npz: "/path/to/preprocessed_data.npz"
+prediction_dirs:
+  m1: "/path/to/outputs/exp6/m1_s"
+  m2: "/path/to/outputs/exp6/m2_s"
+  m3: "/path/to/outputs/exp6/m3_s"
+  m1_fixed: "/path/to/10_Phase32_Results/05_OOF_Predictions/m1fixed_s"
+  m1_global: "/path/to/10_Phase32_Results/05_OOF_Predictions/m1global_s"
+checkpoint_dirs:
+  m1: "/path/to/outputs/exp6/m1_s"
+  m1_fixed: "/path/to/10_Phase32_Results/04_Checkpoints/m1fixed_s"
+  m1_global: "/path/to/10_Phase32_Results/04_Checkpoints/m1global_s"

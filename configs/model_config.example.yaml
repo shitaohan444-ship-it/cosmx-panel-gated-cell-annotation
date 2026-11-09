@@ -1,0 +1,62 @@
+# 实验5 配置（2026-11-06）
+experiment: experiment5
+random_seed: 42
+device: cuda
+out_dir: outputs/exp5
+
+data:
+  n_shared: 108
+  n_specific: 892
+  n_fine: 8
+  n_coarse: 6
+
+model:
+  hidden: 256
+  zdim: 128
+  spec_dropout: 0.2
+  gate_extra_dim: 5
+
+train:
+  lr: 0.001
+  wd: 0.0001
+  epochs: 15
+  batch_size: 1024
+
+variants:
+  M1:   # 原门控（4.3 基线）
+    gate_mode: base
+    use_specific: true
+    use_gene_weight: false
+  M2:   # 直接拼接
+    gate_mode: concat
+    use_specific: true
+    use_gene_weight: false
+  M3:   # 固定权重融合
+    gate_mode: fixed
+    use_specific: true
+    use_gene_weight: false
+  M4:   # 平台条件门控
+    gate_mode: platform
+    use_specific: true
+    use_gene_weight: false
+  M5:   # 细胞证据质量条件门控
+    gate_mode: cell_evidence
+    use_specific: true
+    use_gene_weight: false
+  M6:   # 基因级可靠性加权
+    gate_mode: base
+    use_specific: true
+    use_gene_weight: true
+  M7:   # 完整候选（平台+细胞证据+基因加权）
+    gate_mode: full
+    use_specific: true
+    use_gene_weight: true
+  M8:   # 仅 108 共享基因
+    gate_mode: base
+    use_specific: false
+    use_gene_weight: false
+  M9:   # 仅平台专属基因
+    gate_mode: base
+    use_specific: true
+    use_gene_weight: false
+    zero_shared: true

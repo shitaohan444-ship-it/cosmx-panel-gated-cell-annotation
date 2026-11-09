@@ -1,0 +1,50 @@
+# .gitignore — release repository (Phase 3.6)
+
+# ---- credentials / secrets ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+*.token
+
+# ---- large experimental artifacts ----
+*.npz
+*.pt
+*.pth
+*.ckpt
+*.pkl
+*.pickle
+
+# ---- data (any form) ----
+*.h5
+*.h5ad
+*.loom
+*.rds
+*.mtx
+*.gz
+*.parquet
+data/
+datasets/
+raw_data/
+private_data/
+outputs/
+runs/
+logs/
+checkpoints/
+embeddings/
+cache/
+
+# ---- python ----
+__pycache__/
+*.pyc
+.venv/
+venv/
+conda_env/
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
