@@ -2,14 +2,11 @@
 
 No open-source license has been selected for this repository yet.
 
+This repository is **publicly viewable** on GitHub. Public visibility means
+the contents can be browsed; it does **not** grant permission to use, copy,
+modify, or redistribute the code. In the absence of a license, the default
+copyright applies: **all rights reserved**.
+
 The license choice must be made by the authors. Until a license is added,
-the default copyright applies: **all rights reserved**; no permission is
-granted to use, copy, modify, or distribute this code beyond viewing.
-
-This repository will remain private until the authors:
-1. choose a license (or explicitly decide to keep all rights reserved);
-2. confirm that public release is consistent with data-use agreements of
-   the underlying public datasets; and
-3. approve switching the repository to Public.
-
-Do not assume MIT, Apache-2.0, or any other license applies.
+no permission is granted beyond viewing. Do not assume MIT, Apache-2.0,
+CC-BY, or any other license applies.
