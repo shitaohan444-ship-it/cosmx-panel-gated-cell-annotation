@@ -1,124 +1,57 @@
-# cosmx-panel-gated-cell-annotation
+# Cell-Level Gated Fusion of Shared and CosMx Panel-Specific Gene Representations for Cell-Type Annotation across Heterogeneous Imaging-Based Spatial Transcriptomic Panels
 
-Code for **cell-level gated fusion of shared and CosMx panel-specific gene
-representations for cell-type annotation across heterogeneous imaging-based
-spatial transcriptomic panels**.
-
-> **Status**: private repository. The manuscript is under review preparation;
-> this repository will remain private until the authors approve public
-> release and a license is chosen (see `LICENSE_PENDING.md`).
+Author: hanshitao (Han Shitao)
 
 ## Project Overview
 
-Imaging-based spatial transcriptomics platforms (CosMx, MERSCOPE, Xenium)
-measure different gene panels. In the multi-platform FFPE benchmark used in
-our study, only 108 of the 1,000 CosMx genes are shared across all three
-panels. This repository contains the reference implementation of **M1**, a
-dual-branch annotator that encodes the 108 shared genes and the 892
-CosMx panel-specific genes in separate branches and fuses their 128-d
-representations with a **cell-level adaptive scalar gate**.
+This project studies cell-type annotation across heterogeneous
+imaging-based spatial transcriptomic panels. M1 uses dual-branch
+representations — shared genes and CosMx panel-specific genes — fused by a
+cell-level gate. The shared genes provide cross-platform cell-identity
+information, while the panel-specific genes supplement cell-type-related
+information; the cell-level gate adaptively balances the two per cell.
 
-## Research Objective
+## Key Results
 
-Test whether a cell-level adaptive gate provides a measurable annotation
-benefit over two retrained controls that differ *only* in the gating
-mechanism: **M1-Fixed** (g = 0.5 for every cell) and **M1-Global** (one
-globally learned scalar g = sigmoid(alpha), which converges to ≈0.493).
+On the CosMx 2023 multi-tissue tTMA1 benchmark (37 patients, 169,283 cells,
+patient-level three-fold cross-validation, five seeds):
 
-## Method Overview / Model Architecture
+- Accuracy: **0.8993 ± 0.0052** (equal-fold mean)
+- Macro-F1: **0.8168 ± 0.0148** (fold mean)
+- Patient-level paired accuracy difference: M1 vs M1-Fixed **+0.5204 pp**;
+  M1 vs M1-Global **+0.4262 pp**
+- Note: the full-panel linear reference (LR-A) is slightly more accurate
+  than M1 (about +0.25 pp); M1 is not claimed to outperform all baselines.
 
-```
-x_shared (108)  -> MLP(108->256->128, BN+ReLU) -> z_sh
-x_specific(892) -> MLP(892->256->128, BN+ReLU) -> z_sp
-g = sigmoid(MLP([z_sh; z_sp] -> 128 -> 1))  in (0,1)^{B x 1}   (M1)
-z = g * z_sh + (1 - g) * z_sp
-fine head: Linear(128 -> 8)   coarse head: Linear(128 -> 6)
-```
+## Selected Experimental Results
 
-| Model | Gating mechanism | Trainable gate params |
-|---|---|---|
-| M1 (`src/models/m1.py`) | per-cell scalar gate, broadcast across 128 dims | 33,025 |
-| M1-Fixed (`src/models/m1_fixed.py`) | g = 0.5 constant (no gate network) | 0 |
-| M1-Global (`src/models/m1_global.py`) | one global scalar g = sigmoid(alpha) | 1 |
+Three representative aggregated result files are published on the
+`phase395-selected-results-release` branch:
 
-Training protocol (identical for all three models): log1p input, 15 epochs,
-Adam (lr 1e-3, wd 1e-4), batch 1,024, grad clip 5.0, loss =
-CE(fine) + CE(coarse), 20% panel-specific dropout during training, patient-
-level three-fold CV with five pre-specified seeds {42, 7, 99, 123, 2024},
-fixed final-epoch checkpoint (no early stopping).
+- [Model Performance](https://github.com/shitaohan444-ship-it/cosmx-panel-gated-cell-annotation/blob/phase395-selected-results-release/public_results/model_performance.csv) — closed-set accuracy, macro-F1, ECE, and Brier of M1 and the internal baselines.
+- [Gating Mechanism Comparison](https://github.com/shitaohan444-ship-it/cosmx-panel-gated-cell-annotation/blob/phase395-selected-results-release/public_results/gating_mechanism_comparison.csv) — patient-level paired statistics of the retrained fixed-gate and global-gate controls.
+- [Biological Enrichment](https://github.com/shitaohan444-ship-it/cosmx-panel-gated-cell-annotation/blob/phase395-selected-results-release/public_results/biological_enrichment.csv) — complete GO/KEGG/Reactome enrichment table computed after removing the 33 canonical label-defining markers.
 
-## Data Requirements
+## Environment
 
-**No data ships with this repository.** The experiments use the public
-multi-platform FFPE benchmark (Wang et al., 2025; Zenodo 16848917, CC-BY-4.0)
-and external annotations (Zenodo 15411357; ExperimentHub EH8567). Users must
-obtain these datasets through their official channels.
-
-For training/evaluation, provide a preprocessed `.npz` with the schema
-documented in `src/data.py` (X_shared 108 / X_specific 892 / y_fine / y_coarse /
-folds / core_arr), matching the in-house `build_data5` outputs.
-
-## Installation / Environment
+- Python 3.11 (see [`environment.yml`](environment.yml))
+- PyTorch ≥ 2.1 (see [`requirements.txt`](requirements.txt); verified with
+  2.9.1 for CPU tests and 2.14.1+cu130 on one RTX 3090)
+- CUDA: optional — CPU suffices for the included tests
 
 ```bash
 conda env create -f environment.yml
 conda activate cosmx-gated
-pip install -r requirements.txt   # if not using conda
+python tests/test_models.py
 ```
 
-Python 3.11; PyTorch >= 2.1 (CPU suffices for tests; CUDA optional).
-
-## Training
-
-```bash
-python scripts/train.py --config configs/experiment_config.example.yaml \
-    --model m1 --seed 42 --fold 1 --out-dir runs/m1_s42
-```
-
-See `configs/experiment_config.example.yaml` for path templates (replace
-placeholders with your local layout).
-
-## Evaluation / Statistical Analysis / Calibration
-
-```bash
-python scripts/counterfactual.py --config ... --seed 42 --fold 1 \
-    --ckpt runs/m1_s42/model_fold1.pt --out counterfactual.csv
-python scripts/patient_stats.py --config ... --out patient_stats.csv
-python scripts/calibration.py --config ... --out calibration.csv
-```
-
-Primary statistical estimand: per-patient accuracy averaged over the five
-seeds, then equal-weight mean over 37 patients; two-sided Wilcoxon
-signed-rank; patient-clustered bootstrap 95% CI (B = 2,000, rng 20260331);
-Cohen's dz; BH over the two primary comparisons.
-
-## Biological Interpretation / Figure Reproduction
-
-The frozen attribution (Integrated Gradients), enrichment, spatial, and
-cross-platform analysis scripts from the original runs are provided verbatim
-under `run_code_reference/` (they retain the original hard-coded server
-paths and are intended as provenance, not as turn-key reproductions); the
-config-driven equivalents for the core mechanism analyses live in
-`scripts/`. Figure scripts that generated the manuscript figures are in
-`run_code_reference/charts/`.
-
-## Reproducibility
-
-- Model and metric code in `src/` is byte-identical to the run code
-  (except the documented import localizations; see
-  `docs/DIFFERENCES_FROM_RUN_CODE.md`).
-- `tests/test_models.py` verifies the parameter counts, gate behavior and
-  training step on CPU with synthetic inputs.
-- Original experiment artifacts (predictions, checkpoints) are **not**
-  included in this repository.
+Model weights, training checkpoints, and raw datasets are not included in
+this repository.
 
 ## Citation
 
-Citation information is pending the manuscript publication; see
-`CITATION_PENDING.md`. Until then, please cite the manuscript preprint once
-available, and contact the authors for further information.
+Author: hanshitao (Han Shitao)
 
-## License
-
-No license has been selected yet; see `LICENSE_PENDING.md`. Do not assume
-an open-source license applies.
+Citation files: [`CITATION_PENDING.md`](CITATION_PENDING.md) — the
+manuscript is not yet formally published, so no DOI or publication metadata
+is provided.
